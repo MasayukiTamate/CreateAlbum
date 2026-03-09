@@ -164,3 +164,24 @@ class AlbumManager:
             return True
         except ValueError:
             return False
+
+    def rename_image_path(self, old_path: str, new_path: str) -> int:
+        """
+        登録されている画像パスを一括で変更するのじゃ。
+        実ファイル名をリネームした際に使用するのじゃ。
+
+        :param old_path: 変更前の画像絶対パス
+        :param new_path: 変更後の画像絶対パス
+        :return: 変更した箇所の数
+        """
+        updated_count = 0
+        for album_name, image_list in self.albums.items():
+            if old_path in image_list:
+                # パスを置換するのじゃ
+                index = image_list.index(old_path)
+                image_list[index] = new_path
+                updated_count += 1
+        
+        if updated_count > 0:
+            self.save()
+        return updated_count

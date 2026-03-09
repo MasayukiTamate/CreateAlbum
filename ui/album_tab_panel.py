@@ -28,9 +28,13 @@ class AlbumTabPanel(tk.Frame):
         self.album_manager = album_manager
         # アルバム選択時に呼ぶコールバック
         self.on_select_callback = on_select_callback
+        
+        # フォーカスが外れても最後に選択されたアルバム名を保持するための変数なのじゃ
+        self._current_album: str | None = None
 
         self._build_ui()
         self.refresh()
+
 
     def _build_ui(self):
         """UIウィジェットを組み立てるのじゃ。"""
@@ -131,21 +135,24 @@ class AlbumTabPanel(tk.Frame):
             idx = names.index(select_name)
             self.listbox.selection_set(idx)
             self.listbox.activate(idx)
+            self._current_album = select_name
         elif names:
             # デフォルトは先頭を選択するのじゃ
             self.listbox.selection_set(0)
             self.listbox.activate(0)
+            self._current_album = names[0]
             self.on_select_callback(names[0])
+        else:
+            self._current_album = None
 
     def get_selected(self) -> str | None:
         """
         現在選択中のアルバム名を返すのじゃ。
         何も選択されていない場合は None を返すのじゃ。
+        （Tkinterの仕様上、他のウィジェットをクリックするとListboxの選択が外れるため
+          内部で保持している _current_album を返すのじゃ）
         """
-        sel = self.listbox.curselection()
-        if not sel:
-            return None
-        return self.listbox.get(sel[0])
+        return self._current_album
 
     # ──────────────────────────────────────────
     # イベントハンドラ
@@ -153,8 +160,10 @@ class AlbumTabPanel(tk.Frame):
 
     def _on_select(self, event):
         """Listbox でアルバムを選択したときのハンドラなのじゃ。"""
-        name = self.get_selected()
-        if name:
+        sel = self.listbox.curselection()
+        if sel:
+            name = self.listbox.get(sel[0])
+            self._current_album = name
             self.on_select_callback(name)
 
     def _on_add(self):

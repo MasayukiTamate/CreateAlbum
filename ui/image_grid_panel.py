@@ -256,7 +256,6 @@ class ImageGridPanel(tk.Frame):
     def _show_context_menu(self, event, img_path: str):
         """
         右クリック時にコンテキストメニューを出すのじゃ。
-        現在は「アルバムから削除」のみ提供するのじゃ。
         """
         menu = tk.Menu(self, tearoff=0, bg="#313244", fg="#cdd6f4",
                        activebackground="#89b4fa", activeforeground="#1e1e2e")
@@ -264,7 +263,41 @@ class ImageGridPanel(tk.Frame):
             label="🗑 このアルバムから削除",
             command=lambda: self._remove_image(img_path),
         )
+        menu.add_separator()
+        menu.add_command(
+            label="✏️ ファイル名の変更 (リネーム)",
+            command=lambda: self._rename_image_file(img_path),
+        )
         menu.tk_popup(event.x_root, event.y_root)
+
+    def _rename_image_file(self, old_path: str):
+        """
+        実際の画像ファイル名を変更するのじゃ。
+        """
+        old_p = Path(old_path)
+        from tkinter import simpledialog
+        new_name = simpledialog.askstring(
+            "ファイル名の変更",
+            f"「{old_p.name}」の新しいファイル名（拡張子含む）：",
+            initialvalue=old_p.name,
+            parent=self,
+        )
+        if new_name and new_name != old_p.name:
+            new_p = old_p.parent / new_name
+            if new_p.exists():
+                messagebox.showerror("エラー", f"既に「{new_name}」が存在するのじゃ！", parent=self)
+                return
+            
+            try:
+                # 実際にリネームするのじゃ
+                old_p.rename(new_p)
+                # AlbumManagerのパスも更新するのじゃ
+                self.album_manager.rename_image_path(str(old_p), str(new_p))
+                
+                # 自分自身のグリッドを再読込するのじゃ
+                self.refresh()
+            except Exception as e:
+                messagebox.showerror("エラー", f"リネームに失敗したのじゃ: {e}", parent=self)
 
     def _remove_image(self, img_path: str):
         """
